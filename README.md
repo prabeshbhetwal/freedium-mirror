@@ -30,9 +30,9 @@ freedium-mirror.cfd extension/
 
 1. **Download / clone** this folder so you have the `freedium-mirror.cfd extension/` directory on your machine.
 
-2. Open **Google Chrome** and navigate to:
+2. Open Chromium-based browser like **Google Chrome** and navigate to:
    ```
-   chrome://extensions
+   YOUR_BROWSER://extensions
    ```
 
 3. Enable **Developer mode** (toggle in the top-right corner).
