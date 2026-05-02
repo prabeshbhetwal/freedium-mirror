@@ -1,4 +1,4 @@
-# Freedium Mirror Opener — Chrome Extension
+# Freedium Mirror Opener — Chromium based Browser's Extension
 
 A minimal Chromium based browser's extension (Manifest V3) that redirects Medium articles to the free [Freedium mirror](https://freedium-mirror.cfd) with one click.
 
