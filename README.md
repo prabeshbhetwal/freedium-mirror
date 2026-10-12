@@ -24,6 +24,8 @@ freedium-mirror.cfd extension/
 │   ├── icon48.png     # 48×48 extensions page icon
 │   └── icon128.png    # 128×128 Chrome Web Store icon
 ├── background.test.cjs # Offline URL, failure handling and manifest checks
+├── browser.test.cjs   # Installed Chromium action with isolated web fixtures
+├── .github/workflows/verify.yml # Offline and browser CI
 ├── AGENTS.md          # Project development instructions
 └── README.md          # This file
 ```
@@ -98,6 +100,18 @@ For an actual browser smoke check, use a separate Chromium profile, load the ext
 3. Open `https://example.com` and `chrome://settings`; click and verify each stays unchanged.
 
 Offline tests exercise the real worker with stubbed Chrome APIs. They do not certify browser installation or the mirror's live article retrieval.
+
+GitHub CI also installs the unchanged extension unpacked into a fresh, headless Chromium profile. It triggers the native toolbar action using Chromium's `Extensions.triggerAction` protocol and verifies the `activeTab` grant, same-tab redirect, Back recovery, repeated mirror click and unsupported-page handling. Web pages are isolated fixtures; no real account, article fetch or mirror availability is involved.
+
+To reproduce browser integration locally with Node.js 22+:
+
+```sh
+npm install --no-save --ignore-scripts --no-package-lock playwright@1.64.0
+npx playwright install chromium
+node --test browser.test.cjs
+```
+
+On Linux, `npx playwright install --with-deps chromium` installs required system libraries. The optional test tooling adds no extension runtime dependency. Browser integration uses `--enable-unsafe-extension-debugging` only in its temporary profile; it does not change your normal browser profile or settings. CI is bounded to one browser instance and a 10-minute job limit.
 
 ---
 
