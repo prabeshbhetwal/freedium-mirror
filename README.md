@@ -8,6 +8,8 @@ A minimal Chromium based browser's extension (Manifest V3) that redirects Medium
 
 - **Toolbar button** — Click the extension icon on any Medium page to instantly open it on Freedium.
 - **Minimal permissions** — Only requests `activeTab`.
+- **Explicit action** — Redirects only the clicked tab; no automatic browsing interception or content injection.
+- **Supported pages only** — HTTPS `medium.com` and its subdomains; unsupported pages stay untouched.
 
 ---
 
@@ -21,6 +23,10 @@ freedium-mirror.cfd extension/
 │   ├── icon16.png     # 16×16 toolbar icon
 │   ├── icon48.png     # 48×48 extensions page icon
 │   └── icon128.png    # 128×128 Chrome Web Store icon
+├── background.test.cjs # Offline URL, failure handling and manifest checks
+├── browser.test.cjs   # Installed Chromium action with isolated web fixtures
+├── .github/workflows/verify.yml # Offline and browser CI
+├── AGENTS.md          # Project development instructions
 └── README.md          # This file
 ```
 
@@ -28,18 +34,15 @@ freedium-mirror.cfd extension/
 
 ## Installation (Load Unpacked)
 
-1. **Download / clone** this folder so you have the `freedium-mirror.cfd extension/` directory on your machine.
+1. **Download / clone** [this repository](https://github.com/prabeshbhetwal/freedium-mirror). No dependency installation, build step or API key is required.
 
-2. Open Chromium-based browser like **Google Chrome** and navigate to:
-   ```
-   YOUR_BROWSER://extensions
-   ```
+2. In **Google Chrome**, open `chrome://extensions`; in **Microsoft Edge**, open `edge://extensions`.
 
 3. Enable **Developer mode** (toggle in the top-right corner).
 
 4. Click **"Load unpacked"**.
 
-5. Select the `freedium-mirror.cfd extension/` folder (the one containing `manifest.json`).
+5. Select the repository folder containing `manifest.json` (a Git clone is normally named `freedium-mirror`).
 
 6. The extension should now appear in your extensions list with the name **"Freedium Mirror Opener"**. Pin it to the toolbar for easy access.
 
@@ -47,14 +50,18 @@ freedium-mirror.cfd extension/
 
 ## Usage
 
-1. Navigate to any Medium article, for example:
+1. Navigate to a public HTTPS Medium article. For example, a deterministic URL-construction check uses:
    ```
-   https://medium.com/some-path/article-slug-12345
+   https://medium.com/@author/article-123456789abc
    ```
 
 2. Click the Freedium Mirror Opener icon in the toolbar to redirect the page to the mirror.
 
-3. If you're already on the mirror domain, clicking the icon does nothing.
+3. The current tab navigates to `https://freedium-mirror.cfd/` followed by the original article URL. The example above is synthetic; it checks URL construction, not article availability.
+
+4. On the mirror, an unrelated website, a browser settings page or a local file, clicking does nothing. HTTP URLs, URLs with credentials and non-default ports are also ignored. Custom Medium publication domains outside `*.medium.com` are not supported.
+
+Use the browser's **Back** button to return to the original page. Click **Reload** on the extension card after editing its files. To stop, switch the extension off in the extensions page; no server or background process needs stopping.
 
 ---
 
@@ -72,6 +79,39 @@ freedium-mirror.cfd extension/
 | Permission | Why |
 |---|---|
 | `activeTab` | Read the current tab's URL when the user clicks the icon |
+
+The extension makes no background requests and stores no data. A successful click sends the article URL, including its query string, to the external mirror through browser navigation. The mirror controls its own availability, content and privacy practices. A valid redirect does not guarantee a readable article. If navigation fails, inspect the extension service worker console for the generic warning and retry the click.
+
+## Development checks
+
+With Node.js 18 or newer, run from the repository folder:
+
+```sh
+node --check background.js
+node --test background.test.cjs
+```
+
+These checks need no dependencies or network access. They cover supported URLs, lookalike domains, unsupported protocols, missing tab information, navigation failures and manifest/icon consistency.
+
+For an actual browser smoke check, use a separate Chromium profile, load the extension unpacked, then:
+
+1. Open a real public HTTPS Medium article; click the toolbar action and verify the same tab's mirror URL.
+2. Click again on the mirror and verify the URL stays unchanged.
+3. Open `https://example.com` and `chrome://settings`; click and verify each stays unchanged.
+
+Offline tests exercise the real worker with stubbed Chrome APIs. They do not certify browser installation or the mirror's live article retrieval.
+
+GitHub CI also installs the unchanged extension unpacked into a fresh, headless Chromium profile. It triggers the native toolbar action using Chromium's `Extensions.triggerAction` protocol and verifies the `activeTab` grant, same-tab redirect, Back recovery, repeated mirror click and unsupported-page handling. Web pages are isolated fixtures; no real account, article fetch or mirror availability is involved.
+
+To reproduce browser integration locally with Node.js 22+:
+
+```sh
+npm install --no-save --ignore-scripts --no-package-lock playwright@1.64.0
+npx playwright install chromium
+node --test browser.test.cjs
+```
+
+On Linux, `npx playwright install --with-deps chromium` installs required system libraries. The optional test tooling adds no extension runtime dependency. Browser integration uses `--enable-unsafe-extension-debugging` only in its temporary profile; it does not change your normal browser profile or settings. CI is bounded to one browser instance and a 10-minute job limit.
 
 ---
 
