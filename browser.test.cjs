@@ -35,11 +35,13 @@ test("installed toolbar action grants activeTab and navigates only supported pag
       return { url: tab.url };
     });
     assert.equal(tabBeforeClick.url, undefined, "URL must be inaccessible before activeTab is granted");
-    const cdp = await context.newCDPSession(page);
-    const { targetInfo } = await cdp.send("Target.getTargetInfo");
+    const cdp = await context.browser().newBrowserCDPSession();
+    const { targetInfos } = await cdp.send("Target.getTargets", { filter: [{ type: "tab" }] });
+    const tabTarget = targetInfos.find((target) => target.type === "tab" && target.url === page.url());
+    assert.ok(tabTarget, "Clicked page must have a native tab target");
     const click = async () => {
       const before = await worker.evaluate(() => globalThis.actionCount);
-      await cdp.send("Extensions.triggerAction", { id: extensionId, targetId: targetInfo.targetId });
+      await cdp.send("Extensions.triggerAction", { id: extensionId, targetId: tabTarget.targetId });
       const deadline = Date.now() + 5000;
       while (await worker.evaluate(() => globalThis.actionCount) === before) {
         assert.ok(Date.now() < deadline, "Native toolbar action did not dispatch onClicked");
