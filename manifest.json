@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Freedium Mirror Opener",
-  "version": "1.0.0",
-  "description": "Click to open the current page on Freedium mirror.",
+  "version": "1.0.1",
+  "description": "Click to open HTTPS Medium pages on Freedium mirror.",
   "permissions": [
     "activeTab"
   ],
